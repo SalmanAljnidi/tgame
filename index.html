@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="theme-color" content="#0b1220" />
+  <title>لعبة سبايدرمان التعليمية</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel:rgba(255,255,255,.08);
+      --panel2:rgba(255,255,255,.12);
+      --txt:#ffffff;
+      --muted:rgba(255,255,255,.7);
+      --accent:#ff3b30;
+      --ok:#34c759;
+      --warn:#ffcc00;
+      --shadow:0 10px 30px rgba(0,0,0,.35);
+      --radius:18px;
+      --font: system-ui, -apple-system, "Segoe UI", Tahoma, Arial, sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background: radial-gradient(1200px 800px at 60% -10%, rgba(120,160,255,.22), transparent 60%),
+                  radial-gradient(900px 600px at 20% 110%, rgba(255,120,120,.14), transparent 60%),
+                  var(--bg);
+      color:var(--txt);
+      font-family:var(--font);
+      overflow:hidden;
+      touch-action: none;
+    }
+    .wrap{
+      position:fixed; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      padding:16px;
+    }
+    .card{
+      width:min(900px, 100%);
+      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .topbar{
+      display:flex; gap:12px; align-items:center; justify-content:space-between;
+      padding:12px 14px;
+      background:rgba(0,0,0,.25);
+      border-bottom:1px solid rgba(255,255,255,.10);
+    }
+    .brand{
+      display:flex; gap:10px; align-items:center;
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+    .pill{
+      font-size:12px; color:var(--muted);
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.12);
+      padding:6px 10px; border-radius:999px;
+      white-space:nowrap;
+    }
+    .hud{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      justify-content:flex-start;
+    }
+    .hud b{font-variant-numeric: tabular-nums}
+    .main{
+      display:grid;
+      grid-template-columns: 1fr;
+    }
+    .stage{
+      position:relative;
+      width:100%;
+      aspect-ratio: 16 / 9;
+      background: linear-gradient(180deg, rgba(0,0,0,.0), rgba(0,0,0,.25));
+    }
+    canvas{
+      width:100%; height:100%;
+      display:block;
+      background: transparent;
+    }
+
+    /* Screens / overlays */
+    .overlay{
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.55);
+      backdrop-filter: blur(6px);
+      padding:14px;
+    }
+    .panel{
+      width:min(520px, 100%);
+      background:linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.07));
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:16px;
+    }
+    .panel h1, .panel h2{margin:0 0 10px 0}
+    .panel p{margin:8px 0; color:var(--muted); line-height:1.7}
+    .row{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    }
+    input[type="text"]{
+      width:100%;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.25);
+      color:var(--txt);
+      outline:none;
+      font-size:16px;
+    }
+    .btn{
+      appearance:none; border:0;
+      padding:12px 14px;
+      border-radius:14px;
+      background:rgba(255,255,255,.14);
+      color:var(--txt);
+      border:1px solid rgba(255,255,255,.16);
+      font-weight:700;
+      cursor:pointer;
+      transition:.15s transform ease, .15s background ease;
+      user-select:none;
+    }
+    .btn:hover{transform: translateY(-1px); background:rgba(255,255,255,.18)}
+    .btn.primary{
+      background:rgba(52,199,89,.22);
+      border-color:rgba(52,199,89,.35);
+    }
+    .btn.danger{
+      background:rgba(255,59,48,.20);
+      border-color:rgba(255,59,48,.35);
+    }
+    .btn.wide{width:100%}
+
+    /* Question UI */
+    .qbox{
+      margin-top:10px;
+      border-radius:16px;
+      padding:12px;
+      background:rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.12);
+    }
+    .qtitle{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .timer{
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(255,204,0,.18);
+      border:1px solid rgba(255,204,0,.35);
+      color:#fff;
+      font-weight:800;
+      font-variant-numeric: tabular-nums;
+    }
+    .choices{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:10px;
+    }
+    .choice{
+      padding:12px;
+      border-radius:14px;
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.14);
+      cursor:pointer;
+      font-weight:800;
+      text-align:center;
+      user-select:none;
+    }
+    .choice:hover{background:rgba(255,255,255,.14)}
+    .note{
+      font-size:12px; color:var(--muted);
+      margin-top:10px;
+    }
+
+    /* Footer */
+    footer{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 14px;
+      border-top:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.22);
+      color:rgba(255,255,255,.8);
+      flex-wrap:wrap;
+    }
+    .social{
+      display:flex; gap:10px; align-items:center;
+    }
+    .iconbtn{
+      width:36px; height:36px;
+      border-radius:12px;
+      display:inline-flex; align-items:center; justify-content:center;
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.14);
+      color:#fff;
+      text-decoration:none;
+    }
+    .iconbtn:hover{background:rgba(255,255,255,.14)}
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size:12px;
+      padding:2px 6px;
+      border-radius:8px;
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.12);
+      color:#fff;
+    }
+
+    @media (max-width: 520px){
+      .choices{grid-template-columns: 1fr}
+      .stage{aspect-ratio: 10 / 16;} /* مريح للجوال */
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="card">
+    <div class="topbar">
+      <div class="brand">
+        🕷️ <span>سبايدرمان يقفز الأعداء</span>
+        <span class="pill">عربي • جمع/طرح (٠–١٠) • أوفلاين</span>
+      </div>
+      <div class="hud">
+        <span class="pill">اللاعب: <b id="hudName">—</b></span>
+        <span class="pill">المرحلة: <b id="hudLevel">٠</b></span>
+        <span class="pill">النقاط: <b id="hudScore">٠</b></span>
+        <span class="pill">المحاولات قبل السؤال: <b id="hudHits">٠</b>/٢</span>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="stage">
+        <canvas id="c" width="1280" height="720" aria-label="لعبة سبايدرمان"></canvas>
+
+        <!-- Start screen -->
+        <div class="overlay" id="startOverlay">
+          <div class="panel">
+            <h1>ابدأ اللعب</h1>
+            <p>اكتب اسمك، ثم ابدأ. التحكم: لمس الشاشة أو زر <span class="kbd">مسافة</span> للقفز/إطلاق خيط.</p>
+            <div class="row" style="margin-top:10px">
+              <input id="nameInput" type="text" placeholder="اكتب اسم اللاعب هنا" maxlength="20" />
+            </div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn primary wide" id="btnStart">بدء</button>
+            </div>
+            <p class="note">فكرة اللعبة: إذا نزل سبايدرمان فوق العدو يموت العدو. إذا اصطدم به قبل القفز: يحصل على فرصة (يصبح شفافًا قليلاً)، وإذا تكرر الاصطدام يظهر سؤال لمدة ٢٠ ثانية.</p>
+          </div>
+        </div>
+
+        <!-- Question overlay -->
+        <div class="overlay" id="qOverlay" style="display:none">
+          <div class="panel">
+            <h2>سؤال سريع</h2>
+            <div class="qbox">
+              <div class="qtitle">
+                <div id="qText" style="font-weight:900;font-size:18px"></div>
+                <div class="timer">⏱ <span id="qTimer">٢٠</span> ثانية</div>
+              </div>
+              <div class="choices" id="qChoices"></div>
+              <div class="note" id="qNote">اختر الإجابة الصحيحة قبل انتهاء الوقت.</div>
+            </div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn danger wide" id="btnRestart">إعادة من البداية</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pause / info overlay -->
+        <div class="overlay" id="msgOverlay" style="display:none">
+          <div class="panel">
+            <h2 id="msgTitle">—</h2>
+            <p id="msgBody">—</p>
+            <div class="row" style="margin-top:12px">
+              <button class="btn primary wide" id="btnContinue">متابعة</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <footer>
+        <div>جميع الحقوق محفوظة لـ <b>سلمان الجنيدي</b></div>
+        <div class="social">
+          <a class="iconbtn" href="https://snapchat.com/t/4O2IhALH" target="_blank" rel="noopener" aria-label="Snapchat">
+            <!-- Snapchat icon (simple) -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M12 3c2.7 0 5 2 5 4.7v3.4c.8.5 1.7.6 2.3 1.2.5.5.2 1.2-.4 1.4-.6.2-1.2.3-1.6.8-.4.6.6 2 2.4 2.4.6.1.7 1 .2 1.3-1.2.7-2.5.9-3.2 1.6-.5.5-.5 1.4-1.1 1.7-1 .5-2.3.4-2.6 1.1-.2.4-.6.7-1 .7s-.8-.3-1-.7c-.3-.7-1.6-.6-2.6-1.1-.6-.3-.6-1.2-1.1-1.7-.7-.7-2-.9-3.2-1.6-.5-.3-.4-1.2.2-1.3 1.8-.4 2.8-1.8 2.4-2.4-.4-.5-1-.6-1.6-.8-.6-.2-.9-.9-.4-1.4.6-.6 1.5-.7 2.3-1.2V7.7C7 5 9.3 3 12 3Z" stroke="white" stroke-width="1.6" opacity=".95"/>
+            </svg>
+          </a>
+          <a class="iconbtn" href="https://wa.me/966566996166" target="_blank" rel="noopener" aria-label="WhatsApp">
+            <!-- WhatsApp icon (simple) -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M20 12a8 8 0 0 1-11.7 7L4 20l1.1-4.1A8 8 0 1 1 20 12Z" stroke="white" stroke-width="1.6" opacity=".95"/>
+              <path d="M9.2 8.9c.2-.4.4-.4.7-.4h.6c.2 0 .4.1.5.4l.7 1.8c.1.2.1.4 0 .6l-.4.6c-.1.2-.1.4.1.6.5.7 1.2 1.3 2 1.7.2.1.4.1.6-.1l.6-.4c.2-.1.4-.1.6 0l1.8.7c.3.1.4.3.4.5v.6c0 .3 0 .5-.4.7-.5.4-1.6.8-2.7.5-2.6-.7-4.7-2.8-5.5-5.5-.3-1.1.1-2.2.5-2.7Z" fill="white" opacity=".9"/>
+            </svg>
+          </a>
+        </div>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================
+   أدوات عربية للأرقام
+========================= */
+const toArabicDigits = (n) => String(n).replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[d]);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* =========================
+   إعدادات اللعبة
+========================= */
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+const hudName = document.getElementById("hudName");
+const hudLevel = document.getElementById("hudLevel");
+const hudScore = document.getElementById("hudScore");
+const hudHits  = document.getElementById("hudHits");
+
+const startOverlay = document.getElementById("startOverlay");
+const btnStart = document.getElementById("btnStart");
+const nameInput = document.getElementById("nameInput");
+
+const qOverlay = document.getElementById("qOverlay");
+const qText = document.getElementById("qText");
+const qTimerEl = document.getElementById("qTimer");
+const qChoices = document.getElementById("qChoices");
+const qNote = document.getElementById("qNote");
+const btnRestart = document.getElementById("btnRestart");
+
+const msgOverlay = document.getElementById("msgOverlay");
+const msgTitle = document.getElementById("msgTitle");
+const msgBody = document.getElementById("msgBody");
+const btnContinue = document.getElementById("btnContinue");
+
+let DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+function resize(){
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.floor(rect.width * DPR);
+  canvas.height = Math.floor(rect.height * DPR);
+}
+window.addEventListener("resize", resize);
+resize();
+
+/* =========================
+   حالة اللعبة
+========================= */
+const game = {
+  running:false,
+  asking:false,
+  paused:false,
+  playerName:"—",
+  level:1,
+  score:0,
+  hits:0,             // 0..2 (الثانية تُظهر السؤال)
+  graceActive:false,  // شفافية بسيطة بعد أول اصطدام
+  time:0,
+  lastT:0,
+  spawnT:0,
+  enemies:[],
+  particles:[],
+  skylineSeed: 7,
+};
+
+const player = {
+  x: 180, y: 0,
+  w: 52, h: 64,
+  vy: 0,
+  onGround:false,
+  webActive:false,
+  webT:0,
+};
+
+function resetAll(){
+  game.level = 1;
+  game.score = 0;
+  game.hits = 0;
+  game.graceActive = false;
+  game.time = 0;
+  game.spawnT = 0;
+  game.enemies = [];
+  game.particles = [];
+  player.y = groundY() - player.h;
+  player.vy = 0;
+  player.onGround = true;
+  player.webActive = false;
+  player.webT = 0;
+  updateHud();
+}
+
+function updateHud(){
+  hudName.textContent = game.playerName || "—";
+  hudLevel.textContent = toArabicDigits(game.level);
+  hudScore.textContent = toArabicDigits(game.score);
+  hudHits.textContent  = toArabicDigits(game.hits);
+}
+
+function groundY(){
+  return canvas.height / DPR - 92; // أرضية
+}
+
+function difficulty(){
+  // كل مرحلة تزيد السرعة وتقلل وقت توليد الأعداء
+  const speed = 240 + (game.level-1)*35;
+  const spawnEvery = Math.max(0.65, 1.25 - (game.level-1)*0.06); // بالثواني
+  return {speed, spawnEvery};
+}
+
+/* =========================
+   رسم خلفية مبانٍ سعودية (ستايل بسيط)
+========================= */
+function drawSaudiSkyline(){
+  const w = canvas.width / DPR;
+  const h = canvas.height / DPR;
+
+  // سماء
+  const g = ctx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0, "rgba(30,60,120,.55)");
+  g.addColorStop(0.6, "rgba(10,18,32,.95)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,w,h);
+
+  // نجوم خفيفة
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  let r = game.skylineSeed;
+  for(let i=0;i<90;i++){
+    r = (r*9301 + 49297) % 233280;
+    const x = (r/233280) * w;
+    r = (r*9301 + 49297) % 233280;
+    const y = (r/233280) * (h*0.45);
+    const s = 1 + ((i%7)==0 ? 1:0);
+    ctx.fillStyle = "rgba(255,255,255,.9)";
+    ctx.fillRect(x,y,s,s);
+  }
+  ctx.restore();
+
+  // أفق مبانٍ: مربعات + شرفات + أقواس (إيحاء طراز نجدي/حجازي بشكل مبسط)
+  ctx.save();
+  ctx.translate(0, h*0.20);
+
+  const layers = [
+    {y: h*0.34, a: 0.18, step: 110, color:"rgba(255,255,255,.10)"},
+    {y: h*0.42, a: 0.22, step: 90,  color:"rgba(255,255,255,.13)"},
+    {y: h*0.52, a: 0.28, step: 70,  color:"rgba(255,255,255,.17)"},
+  ];
+
+  layers.forEach((L, li) => {
+    ctx.fillStyle = L.color;
+    ctx.globalAlpha = 1;
+    let x = -40;
+    let seed = game.skylineSeed * (li+3);
+    while(x < w+60){
+      seed = (seed*1103515245 + 12345) >>> 0;
+      const bw = L.step + (seed%50);
+      seed = (seed*1103515245 + 12345) >>> 0;
+      const bh = (h*0.18) + (seed%160);
+      const y = L.y - bh;
+
+      // جسم المبنى
+      roundRect(x, y, bw, bh, 10);
+      ctx.fill();
+
+      // نوافذ صغيرة
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = "rgba(255,255,255,.55)";
+      const cols = Math.max(2, Math.floor(bw/24));
+      const rows = Math.max(2, Math.floor(bh/28));
+      for(let r=0;r<rows;r++){
+        for(let c=0;c<cols;c++){
+          const wx = x + 10 + c*(bw-20)/cols;
+          const wy = y + 14 + r*(bh-26)/rows;
+          ctx.fillRect(wx, wy, 5, 9);
+        }
+      }
+      ctx.restore();
+
+      // أقواس في الأسفل (إيحاء)
+      ctx.save();
+      ctx.globalAlpha = 0.20;
+      ctx.fillStyle = "rgba(255,255,255,.9)";
+      const archCount = Math.max(2, Math.floor(bw/34));
+      for(let k=0;k<archCount;k++){
+        const ax = x + 10 + k*(bw-20)/archCount;
+        const ay = y + bh - 18;
+        ctx.beginPath();
+        ctx.arc(ax+10, ay+10, 10, Math.PI, 0);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+
+      x += bw - 12;
+    }
+  });
+
+  ctx.restore();
+
+  // أرضية
+  ctx.fillStyle = "rgba(0,0,0,.35)";
+  ctx.fillRect(0, groundY(), w, h-groundY());
+
+  // خط أرضي
+  ctx.strokeStyle = "rgba(255,255,255,.12)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, groundY());
+  ctx.lineTo(w, groundY());
+  ctx.stroke();
+}
+
+function roundRect(x,y,w,h,r){
+  const rr = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+rr, y);
+  ctx.arcTo(x+w, y, x+w, y+h, rr);
+  ctx.arcTo(x+w, y+h, x, y+h, rr);
+  ctx.arcTo(x, y+h, x, y, rr);
+  ctx.arcTo(x, y, x+w, y, rr);
+  ctx.closePath();
+}
+
+/* =========================
+   سبايدرمان + خيط
+========================= */
+function drawSpiderman(){
+  const x = player.x, y = player.y;
+
+  // شفافية عند فرصة النجاة
+  ctx.save();
+  ctx.globalAlpha = game.graceActive ? 0.55 : 1;
+
+  // جسم (ستايل كرتوني بسيط)
+  // رأس
+  ctx.fillStyle = "#ff3b30";
+  roundRect(x+10, y, 32, 28, 10); ctx.fill();
+  // عيون
+  ctx.fillStyle = "rgba(255,255,255,.95)";
+  roundRect(x+15, y+10, 10, 8, 4); ctx.fill();
+  roundRect(x+27, y+10, 10, 8, 4); ctx.fill();
+  ctx.fillStyle = "rgba(0,0,0,.35)";
+  ctx.fillRect(x+18, y+12, 4, 2);
+  ctx.fillRect(x+30, y+12, 4, 2);
+
+  // صدر
+  ctx.fillStyle = "#1e3a8a";
+  roundRect(x+6, y+24, 40, 26, 12); ctx.fill();
+
+  // رجلين
+  ctx.fillStyle = "#ff3b30";
+  roundRect(x+10, y+48, 14, 16, 8); ctx.fill();
+  roundRect(x+28, y+48, 14, 16, 8); ctx.fill();
+
+  // خطوط عنكبوت على الصدر (رمزية)
+  ctx.save();
+  ctx.globalAlpha *= 0.35;
+  ctx.strokeStyle = "rgba(255,255,255,.9)";
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(x+26, y+28);
+  ctx.lineTo(x+26, y+48);
+  ctx.moveTo(x+14, y+36);
+  ctx.lineTo(x+38, y+36);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.restore();
+
+  // خيط العنكبوت
+  if(player.webActive){
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,.85)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x+26, y+18);
+    ctx.lineTo(x+26, y-50);
+    ctx.stroke();
+
+    // تأثير التعلّق (نقطة)
+    ctx.fillStyle = "rgba(255,255,255,.85)";
+    ctx.beginPath();
+    ctx.arc(x+26, y-50, 4, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+/* =========================
+   الأعداء
+========================= */
+function spawnEnemy(){
+  const w = canvas.width / DPR;
+  const gy = groundY();
+
+  const {speed} = difficulty();
+  // عدو بسيط
+  const e = {
+    x: w + 40,
+    y: gy - 44,
+    w: 42,
+    h: 44,
+    vx: -speed,
+    alive:true,
+    kind: (Math.random()<0.20 ? "tall" : "normal")
+  };
+  if(e.kind === "tall"){
+    e.h = 62;
+    e.y = gy - e.h;
+    e.w = 40;
+    e.vx *= 1.05;
+  }
+  game.enemies.push(e);
+}
+
+function drawEnemy(e){
+  ctx.save();
+  ctx.globalAlpha = 0.95;
+  // جسم العدو
+  ctx.fillStyle = "rgba(255,255,255,.14)";
+  roundRect(e.x, e.y, e.w, e.h, 12); ctx.fill();
+  // عينين
+  ctx.fillStyle = "rgba(255,255,255,.65)";
+  roundRect(e.x+10, e.y+12, 7, 7, 3); ctx.fill();
+  roundRect(e.x+e.w-17, e.y+12, 7, 7, 3); ctx.fill();
+  // فم
+  ctx.save();
+  ctx.globalAlpha = 0.4;
+  ctx.fillStyle = "rgba(0,0,0,.8)";
+  ctx.fillRect(e.x+12, e.y+26, e.w-24, 5);
+  ctx.restore();
+  ctx.restore();
+}
+
+function killEnemy(e){
+  e.alive = false;
+  game.score += 5;
+  // شرارة بسيطة
+  for(let i=0;i<14;i++){
+    game.particles.push({
+      x: e.x + e.w/2,
+      y: e.y + e.h/2,
+      vx: (Math.random()*2-1)*160,
+      vy: (Math.random()*2-1)*160,
+      t: 0,
+      life: 0.45 + Math.random()*0.25
+    });
+  }
+}
+
+/* =========================
+   تصادم
+========================= */
+function aabb(ax,ay,aw,ah,bx,by,bw,bh){
+  return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by;
+}
+
+function handleCollisions(dt){
+  for(const e of game.enemies){
+    if(!e.alive) continue;
+
+    const hit = aabb(player.x, player.y, player.w, player.h, e.x, e.y, e.w, e.h);
+    if(!hit) continue;
+
+    // تحديد هل اللاعب "نزل" على العدو؟ (أي كان فوقه ويتحرك للأسفل)
+    const playerBottom = player.y + player.h;
+    const enemyTop = e.y;
+    const comingDown = player.vy > 60; // نازل
+    const fromAbove = (playerBottom - enemyTop) < 18; // قريب من الأعلى
+
+    if(comingDown && fromAbove){
+      // قتل العدو
+      killEnemy(e);
+      // ارتداد بسيط
+      player.vy = -380;
+      game.graceActive = false;
+      game.hits = 0;
+      updateHud();
+      continue;
+    }
+
+    // اصطدام قبل القفز/بدون نزول على العدو:
+    if(game.hits === 0){
+      game.hits = 1;
+      game.graceActive = true; // شفافية "فرصة"
+      updateHud();
+
+      // دفع للخلف قليلاً لمنع التداخل
+      player.x = Math.max(70, player.x - 12);
+    } else {
+      // الاصطدام الثاني: سؤال
+      game.hits = 2;
+      updateHud();
+      startQuestion();
+      return;
+    }
+  }
+}
+
+/* =========================
+   سؤال (جمع/طرح ٠-١٠) + ٢٠ ثانية
+========================= */
+let qState = null;
+let qInterval = null;
+
+function randInt(a,b){ return Math.floor(a + Math.random()*(b-a+1)); }
+
+function makeQuestion(){
+  const op = Math.random() < 0.5 ? "+" : "−";
+  let a = randInt(0,10);
+  let b = randInt(0,10);
+
+  // للطرح: نضمن نتيجة غير سالبة
+  if(op === "−" && b > a){
+    [a,b] = [b,a];
+  }
+  const answer = (op === "+") ? (a+b) : (a-b);
+
+  // خيارات (ضمن 0..20 لكن نعرض عربي)
+  const choices = new Set([answer]);
+  while(choices.size < 4){
+    let c = answer + randInt(-3,3);
+    c = clamp(c, 0, 20);
+    choices.add(c);
+  }
+  const arr = Array.from(choices);
+  // خلط
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return {a,b,op,answer,choices:arr};
+}
+
+function startQuestion(){
+  game.asking = true;
+  game.running = false;
+  game.graceActive = false;
+
+  qOverlay.style.display = "flex";
+  qNote.textContent = "اختر الإجابة الصحيحة قبل انتهاء الوقت.";
+  qState = makeQuestion();
+
+  qText.textContent = `كم ناتج: ${toArabicDigits(qState.a)} ${qState.op} ${toArabicDigits(qState.b)} ؟`;
+  qChoices.innerHTML = "";
+
+  qState.choices.forEach(val=>{
+    const div = document.createElement("div");
+    div.className = "choice";
+    div.textContent = toArabicDigits(val);
+    div.addEventListener("click", ()=> submitAnswer(val));
+    qChoices.appendChild(div);
+  });
+
+  let t = 20;
+  qTimerEl.textContent = toArabicDigits(t);
+  clearInterval(qInterval);
+  qInterval = setInterval(()=>{
+    t--;
+    qTimerEl.textContent = toArabicDigits(Math.max(0,t));
+    if(t <= 0){
+      clearInterval(qInterval);
+      loseAndRestart("انتهى الوقت", "لم يتم اختيار إجابة خلال ٢٠ ثانية. تعتبر خاسر وتبدأ من جديد.");
+    }
+  }, 1000);
+}
+
+function submitAnswer(val){
+  if(!qState) return;
+  clearInterval(qInterval);
+
+  if(val === qState.answer){
+    qNote.textContent = "إجابة صحيحة ✅";
+    // مكافأة
+    game.score += 10;
+    // نكمل اللعب مع تصفير الضربات
+    setTimeout(()=>{
+      qOverlay.style.display = "none";
+      game.asking = false;
+      game.running = true;
+      game.hits = 0;
+      updateHud();
+      // دفع اللاعب للأمام قليلًا
+      player.x = 180;
+    }, 450);
+  } else {
+    loseAndRestart("إجابة خاطئة", "الإجابة غير صحيحة. ستبدأ من جديد.");
+  }
+}
+
+function loseAndRestart(title, body){
+  qOverlay.style.display = "none";
+  game.asking = false;
+  showMessage(title, body, true);
+}
+
+function showMessage(title, body, hardReset=false){
+  msgTitle.textContent = title;
+  msgBody.textContent = body;
+  msgOverlay.style.display = "flex";
+  game.paused = true;
+
+  btnContinue.onclick = ()=>{
+    msgOverlay.style.display = "none";
+    game.paused = false;
+
+    if(hardReset){
+      resetAll();
+      game.running = true;
+    } else {
+      game.running = true;
+    }
+  };
+}
+
+/* =========================
+   تحديث + رسم
+========================= */
+function update(dt){
+  if(!game.running) return;
+
+  game.time += dt;
+  const {speed, spawnEvery} = difficulty();
+
+  // توليد أعداء
+  game.spawnT += dt;
+  if(game.spawnT >= spawnEvery){
+    game.spawnT = 0;
+    spawnEnemy();
+  }
+
+  // جاذبية + حركة لاعب
+  const g = 1200;
+  player.vy += g * dt;
+  player.y += player.vy * dt;
+
+  // أرضية
+  const gy = groundY();
+  if(player.y + player.h >= gy){
+    player.y = gy - player.h;
+    player.vy = 0;
+    player.onGround = true;
+  } else {
+    player.onGround = false;
+  }
+
+  // خيط
+  if(player.webActive){
+    player.webT += dt;
+    if(player.webT > 0.22){
+      player.webActive = false;
+    }
+  }
+
+  // حركة الأعداء
+  for(const e of game.enemies){
+    e.x += e.vx * dt;
+  }
+  // حذف خارج الشاشة أو ميت
+  game.enemies = game.enemies.filter(e => e.x + e.w > -80 && e.alive);
+
+  // جسيمات
+  for(const p of game.particles){
+    p.t += dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vx *= (1 - 3*dt);
+    p.vy *= (1 - 3*dt);
+  }
+  game.particles = game.particles.filter(p => p.t < p.life);
+
+  // تصادمات
+  handleCollisions(dt);
+
+  // ترقية مرحلة كل نقاط معينة
+  const target = 40 + (game.level-1)*35;
+  if(game.score >= target){
+    game.level++;
+    game.score += 5; // مكافأة صغيرة
+    updateHud();
+    showMessage("مرحلة جديدة 🎉", `أحسنت! وصلت للمرحلة ${toArabicDigits(game.level)}. ستزداد السرعة والصعوبة.`, false);
+  }
+}
+
+function draw(){
+  const w = canvas.width / DPR;
+  const h = canvas.height / DPR;
+
+  // ملاحظة: لأن canvas على DPR، نضبط transform
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+
+  drawSaudiSkyline();
+
+  // مسار/أرض
+  // (مرسوم في skyline)
+
+  // الأعداء
+  for(const e of game.enemies) drawEnemy(e);
+
+  // جسيمات
+  for(const p of game.particles){
+    const a = 1 - (p.t/p.life);
+    ctx.save();
+    ctx.globalAlpha = 0.55 * a;
+    ctx.fillStyle = "rgba(255,255,255,.9)";
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // اللاعب
+  drawSpiderman();
+
+  // تلميحات بسيطة
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = "rgba(255,255,255,.9)";
+  ctx.font = "14px " + getComputedStyle(document.body).fontFamily;
+  const hint = "للقفز/الخيط: لمس أو مسافة";
+  ctx.fillText(hint, 14, 22);
+  ctx.restore();
+}
+
+function loop(ts){
+  const t = ts/1000;
+  const dt = game.lastT ? clamp(t - game.lastT, 0, 0.033) : 0;
+  game.lastT = t;
+
+  if(!game.paused && !game.asking) update(dt);
+  draw();
+
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* =========================
+   تحكم: لمس/كيبورد
+========================= */
+function jumpOrWeb(){
+  if(!game.running) return;
+
+  // فكرة: إذا على الأرض -> قفز، إذا في الهواء -> خيط يعطي دفعة صغيرة للأعلى
+  if(player.onGround){
+    player.vy = -560;
+    player.onGround = false;
+  } else {
+    player.webActive = true;
+    player.webT = 0;
+    player.vy = Math.min(player.vy, 30);
+    player.vy -= 260; // دفعة للأعلى
+  }
+}
+
+window.addEventListener("keydown", (e)=>{
+  if(e.code === "Space"){
+    e.preventDefault();
+    if(startOverlay.style.display !== "none") return;
+    if(qOverlay.style.display !== "none") return;
+    jumpOrWeb();
+  }
+});
+
+canvas.addEventListener("pointerdown", (e)=>{
+  e.preventDefault();
+  if(startOverlay.style.display !== "none") return;
+  if(qOverlay.style.display !== "none") return;
+  jumpOrWeb();
+});
+
+/* =========================
+   بدء اللعبة
+========================= */
+btnStart.addEventListener("click", ()=>{
+  const nm = (nameInput.value || "").trim();
+  game.playerName = nm ? nm : "لاعب";
+  hudName.textContent = game.playerName;
+
+  startOverlay.style.display = "none";
+  resetAll();
+  game.running = true;
+});
+
+btnRestart.addEventListener("click", ()=>{
+  // من شاشة السؤال
+  qOverlay.style.display = "none";
+  game.asking = false;
+  resetAll();
+  game.running = true;
+});
+
+/* =========================
+   تسجيل Service Worker للأوفلاين
+========================= */
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
