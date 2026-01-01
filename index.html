@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>لعبة سبايدرمان التعليمية</title>
+  <link rel="manifest" href="manifest.json?v=v1767248588" />
+  <style>
+    :root{
+      --txt:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.72);
+      --stroke:rgba(255,255,255,.12);
+      --shadow:0 18px 50px rgba(0,0,0,.45);
+      --r:18px;
+    }
+    html,body{height:100%;margin:0;background:radial-gradient(1200px 900px at 20% 10%, #203a7a 0%, #0b1020 55%, #060812 100%); color:var(--txt); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial; overflow:hidden}
+    .wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; padding:12px;}
+    .card{
+      width:min(920px, calc(100vw - 24px));
+      height:min(980px, calc(100dvh - 24px));
+      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      border:1px solid var(--stroke);
+      border-radius:var(--r);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+    .top{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.10);background:rgba(0,0,0,.18);}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:.2px}
+    .dot{width:10px;height:10px;border-radius:999px;background:#ff3b30; box-shadow:0 0 0 3px rgba(255,59,48,.25)}
+    .hud{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .chip{padding:6px 10px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(255,255,255,.06);font-weight:800;font-size:13px;color:rgba(255,255,255,.88)}
+    .stage{position:relative;flex:1 1 auto;min-height:0;}
+    canvas{width:100%;height:100%;display:block;touch-action:none;}
+    footer{flex:0 0 auto;padding:10px 12px;border-top:1px solid rgba(255,255,255,.10);background:rgba(0,0,0,.18);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+    .links{display:flex;gap:10px;align-items:center}
+    .ico{width:34px;height:34px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);display:grid;place-items:center;color:rgba(255,255,255,.92);text-decoration:none;font-weight:900;}
+    .ico:active{transform:translateY(1px)}
+    .small{color:rgba(255,255,255,.78);font-size:12px}
+
+    .overlay{position:absolute; inset:0; display:none; align-items:center; justify-content:center; padding:14px; background:rgba(0,0,0,.55); backdrop-filter: blur(7px);}
+    .panel{width:min(560px, 100%);border-radius:18px;border:1px solid rgba(255,255,255,.16);background:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.07));box-shadow:0 18px 70px rgba(0,0,0,.55);padding:14px;}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    h1,h2{margin:0 0 8px 0}
+    h1{font-size:20px}
+    h2{font-size:16px;color:rgba(255,255,255,.92)}
+    .muted{color:rgba(255,255,255,.72);font-size:13px;line-height:1.8}
+    input{width:100%;padding:12px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.25);color:rgba(255,255,255,.92);outline:none;font-size:15px;font-weight:800;}
+    .btn{padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.16);background:linear-gradient(180deg, rgba(255,59,48,.95), rgba(255,59,48,.75));color:white;font-weight:900;cursor:pointer;user-select:none;flex:1 1 auto;text-align:center;}
+    .btn.secondary{background:rgba(255,255,255,.08);color:rgba(255,255,255,.92);}
+    .btn:active{transform:translateY(1px)}
+    .errbox{margin-top:10px;padding:10px;border-radius:14px;background:rgba(255,59,48,.10);border:1px solid rgba(255,59,48,.25);color:rgba(255,255,255,.92);font-size:12px;line-height:1.7;display:none;white-space:pre-wrap;}
+
+    .qtitle{display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .timer{font-weight:900;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.22)}
+    .qtext{margin-top:10px;font-size:16px;font-weight:900}
+    .visual{margin-top:10px;padding:10px;border-radius:14px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.12);}
+    .visualRow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .vLabel{min-width:76px;color:rgba(255,255,255,.86);font-weight:900}
+    .token{width:20px;height:20px;border-radius:999px;background:rgba(255,255,255,.88);box-shadow:0 2px 6px rgba(0,0,0,.25);position:relative}
+    .token.dim{background:rgba(255,255,255,.52)}
+    .token.cross::before{content:"";position:absolute;left:3px;right:3px;top:50%;height:2px;background:rgba(255,59,48,.78);transform:rotate(-18deg);box-shadow:0 0 0 1px rgba(0,0,0,.12);}
+    .visualHint{margin-top:8px;color:rgba(255,255,255,.72);font-size:12px;line-height:1.6}
+    .choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+    .choice{padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);font-weight:900;font-size:16px;text-align:center;cursor:pointer;user-select:none;}
+    .choice:active{transform:translateY(1px)}
+    .qnote{margin-top:10px;color:rgba(255,255,255,.78);font-size:12px}
+
+    @media (max-width:520px){
+      .wrap{padding:8px}
+      .card{height: calc(100dvh - 16px); border-radius:16px}
+      .choices{grid-template-columns:1fr}
+      .top{padding:10px 12px}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="top">
+      <div class="brand"><span class="dot"></span> لعبة سبايدرمان التعليمية</div>
+      <div class="hud">
+        <span class="chip" id="hudName">اللاعب: —</span>
+        <span class="chip" id="hudLevel">المرحلة: ١</span>
+        <span class="chip" id="hudScore">النقاط: ٠</span>
+        <span class="chip" id="hudHits">المحاولات: ٠</span>
+        <span class="chip" id="hudOffline">أوفلاين: —</span>
+      </div>
+    </div>
+
+    <div class="stage">
+      <canvas id="c"></canvas>
+
+      <div class="overlay" id="ovStart" style="display:flex">
+        <div class="panel">
+          <h1>ابدأ اللعب</h1>
+          <div class="muted">اكتب اسم اللاعب ثم اضغط <b>ابدأ</b>.<br>التحكم: <b>لمس</b> أو <b>مسافة</b> للقفز. أثناء الطيران يمكنك لمس/مسافة مرة ثانية لدفعة بخيط العنكبوت.</div>
+          <div style="height:10px"></div>
+          <input id="nameInput" placeholder="اسم اللاعب" maxlength="18" />
+          <div style="height:12px"></div>
+          <div class="row">
+            <div class="btn" id="btnStart">ابدأ</div>
+            <div class="btn secondary" id="btnHelp">شرح سريع</div>
+          </div>
+          <div class="errbox" id="startErr"></div>
+        </div>
+      </div>
+
+      <div class="overlay" id="ovMsg">
+        <div class="panel">
+          <h2 id="msgTitle">رسالة</h2>
+          <div class="muted" id="msgBody">…</div>
+          <div style="height:12px"></div>
+          <div class="row">
+            <div class="btn" id="btnAgain">ابدأ من جديد</div>
+            <div class="btn secondary" id="btnCloseMsg">إغلاق</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="ovQ">
+        <div class="panel">
+          <div class="qtitle">
+            <h2>سؤال سريع</h2>
+            <div class="timer">الوقت: <span id="qTimer">٣٠</span>ث</div>
+          </div>
+          <div class="qtext" id="qText">…</div>
+          <div class="visual" id="qVisual"></div>
+          <div class="choices" id="qChoices"></div>
+          <div class="qnote" id="qNote">اختر الإجابة خلال ٣٠ ثانية.</div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="small">جميع الحقوق محفوظة لـ <b>سلمان الجنيدي</b></div>
+      <div class="links">
+        <a class="ico" href="https://snapchat.com/t/4O2IhALH" target="_blank" rel="noopener" aria-label="سناب">س</a>
+        <a class="ico" href="https://wa.me/966566996166" target="_blank" rel="noopener" aria-label="واتساب">و</a>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = (id)=>document.getElementById(id);
+  const startErr = $("startErr");
+  const showStartError = (e) => {
+    startErr.style.display="block";
+    startErr.textContent = "خطأ:\n" + (e && (e.stack || e.message) ? (e.stack || e.message) : String(e));
+  };
+  window.addEventListener("error", (ev)=> showStartError(ev.error || ev.message));
+  window.addEventListener("unhandledrejection", (ev)=> showStartError(ev.reason || ev));
+
+  // Offline status
+  const hudOffline = $("hudOffline");
+  const setOffline = ()=> hudOffline.textContent = "أوفلاين: " + (navigator.onLine ? "لا" : "نعم");
+  window.addEventListener("online", setOffline);
+  window.addEventListener("offline", setOffline);
+  setOffline();
+
+  // Service Worker (offline)
+  async function setupSW(){
+    if(!("serviceWorker" in navigator)) return;
+    try{
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for(const r of regs){ try{ await r.unregister(); }catch{} }
+      await navigator.serviceWorker.register("./sw.js?v=v1767248588");
+    }catch(e){}
+  }
+  window.addEventListener("load", setupSW);
+
+  const clamp = (v,a,b)=>Math.max(a, Math.min(b,v));
+  const toArabicDigits = (n)=> String(n).replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[+d]);
+
+  const SFX = (() => {
+    let ctx = null;
+    const ensure = () => {
+      if(!ctx){
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if(!AC) return null;
+        ctx = new AC();
+      }
+      if(ctx.state === "suspended") ctx.resume().catch(()=>{});
+      return ctx;
+    };
+    const beep = ({type="sine", f=440, dur=0.10, gain=0.06, slide=null}={}) => {
+      const ac = ensure(); if(!ac) return;
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(f, ac.currentTime);
+      if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, slide), ac.currentTime + dur);
+      g.gain.setValueAtTime(gain, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(); o.stop(ac.currentTime + dur);
+    };
+    const chord = () => {
+      beep({type:"triangle", f:523, dur:0.08, gain:0.05});
+      beep({type:"triangle", f:659, dur:0.10, gain:0.045});
+      beep({type:"triangle", f:784, dur:0.12, gain:0.040});
+    };
+    return {
+      unlock(){ ensure(); },
+      jump(){ beep({type:"square", f:520, dur:0.08, gain:0.05, slide:820}); },
+      web(){  beep({type:"sine", f:880, dur:0.06, gain:0.04, slide:520}); },
+      hit(){  beep({type:"sawtooth", f:180, dur:0.10, gain:0.06, slide:90}); },
+      smash(){beep({type:"sawtooth", f:260, dur:0.08, gain:0.07, slide:60}); },
+      correct(){ chord(); },
+      wrong(){ beep({type:"sawtooth", f:220, dur:0.22, gain:0.06, slide:70}); },
+      levelup(){ beep({type:"triangle", f:440, dur:0.10, gain:0.05, slide:880}); beep({type:"triangle", f:660, dur:0.12, gain:0.045, slide:990}); }
+    };
+  })();
+
+  const canvas = $("c");
+  const ctx = canvas.getContext("2d");
+  const ovStart = $("ovStart");
+  const ovMsg = $("ovMsg");
+  const ovQ = $("ovQ");
+  const btnStart = $("btnStart");
+  const btnHelp = $("btnHelp");
+  const btnAgain = $("btnAgain");
+  const btnCloseMsg = $("btnCloseMsg");
+  const nameInput = $("nameInput");
+
+  const hudName = $("hudName");
+  const hudLevel = $("hudLevel");
+  const hudScore = $("hudScore");
+  const hudHits = $("hudHits");
+
+  const qTimerEl = $("qTimer");
+  const qText = $("qText");
+  const qVisual = $("qVisual");
+  const qChoices = $("qChoices");
+  const qNote = $("qNote");
+
+  const show = (el)=>{ el.style.display="flex"; };
+  const hide = (el)=>{ el.style.display="none"; };
+  const hideAll = ()=>{ hide(ovStart); hide(ovMsg); hide(ovQ); };
+  const msg = (title, body) => {
+    $("msgTitle").textContent = title;
+    $("msgBody").textContent = body;
+    show(ovMsg);
+  };
+
+  let DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  let SCALE_X = DPR, SCALE_Y = DPR;
+
+  function resize(){
+    const r = canvas.getBoundingClientRect();
+    const bw = Math.ceil(r.width * DPR);
+    const bh = Math.ceil(r.height * DPR);
+    canvas.width = bw;
+    canvas.height = bh;
+    SCALE_X = bw / r.width;
+    SCALE_Y = bh / r.height;
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  const game = {
+    running:false,
+    asking:false,
+    name:"—",
+    level:1,
+    score:0,
+    hits:0,
+    spawnT:0,
+    pitT:0,
+    enemies:[],
+    pits:[],
+    camT:0, camX:0, camY:0,
+    invulnT:0,
+    skySeed: 7,
+  };
+
+  const player = {
+    x:180, y:0,
+    w:52, h:68,
+    vy:0,
+    onGround:true,
+    webActive:false,
+    webT:0,
+  };
+
+  function groundBaseline(){ return canvas.height / SCALE_Y - 92; }
+  function isPitAt(x){
+    for(const p of game.pits){ if(x >= p.x && x <= p.x + p.w) return true; }
+    return false;
+  }
+  function groundYAt(x){ return isPitAt(x) ? (canvas.height / SCALE_Y + 500) : groundBaseline(); }
+  function safePlacePlayer(){
+    player.x = 180;
+    if(isPitAt(player.x + player.w/2)) game.pits = [];
+    player.y = groundYAt(player.x + player.w/2) - player.h;
+    player.vy = 0;
+    player.onGround = true;
+  }
+
+  function updateHUD(){
+    hudName.textContent = "اللاعب: " + game.name;
+    hudLevel.textContent = "المرحلة: " + toArabicDigits(game.level);
+    hudScore.textContent = "النقاط: " + toArabicDigits(game.score);
+    hudHits.textContent = "المحاولات: " + toArabicDigits(game.hits);
+  }
+
+  function difficulty(){
+    const speed = 280 + (game.level-1)*16;
+    const enemyEvery = Math.max(0.85, 1.55 - (game.level-1)*0.03);
+    const pitEvery = Math.max(1.35, 2.70 - (game.level-1)*0.05);
+    const flyerChance = clamp(0.18 + (game.level-1)*0.01, 0.18, 0.35);
+    const spikyChance = clamp(0.22 + (game.level-1)*0.012, 0.22, 0.45);
+    return {speed, enemyEvery, pitEvery, flyerChance, spikyChance};
+  }
+
+  function resetAll(){
+    game.running = false;
+    game.asking = false;
+    game.level = 1;
+    game.score = 0;
+    game.hits = 0;
+    game.spawnT = 0;
+    game.pitT = 0;
+    game.enemies = [];
+    game.pits = [];
+    game.camT = 0; game.camX = 0; game.camY = 0;
+    game.invulnT = 0;
+    player.vy = 0;
+    player.webActive = false;
+    player.webT = 0;
+    safePlacePlayer();
+    updateHUD();
+  }
+
+  function spawnEnemy(){
+    const w = canvas.width / SCALE_X;
+    const gy = groundBaseline();
+    const d = difficulty();
+    const r = Math.random();
+
+    let kind = "walker";
+    if(r < d.flyerChance) kind = "flyer";
+    else if(r < d.flyerChance + d.spikyChance) kind = "spiky";
+
+    const e = {kind, x: w + 60, y: gy, w:46, h:50, alive:true, vx: -d.speed};
+    if(kind === "flyer"){
+      e.w = 46; e.h = 32;
+      e.y = gy - 150 - Math.random()*90;
+      e.vx *= 1.10;
+    } else if(kind === "spiky"){
+      e.w = 42; e.h = 42;
+      e.y = gy - e.h;
+      e.vx *= 1.05;
+    } else {
+      e.w = 50; e.h = 52;
+      e.y = gy - e.h;
+    }
+    game.enemies.push(e);
+  }
+
+  function spawnPit(){
+    const w = canvas.width / SCALE_X;
+    const pitW = 80 + Math.random()*110 + Math.min(120, (game.level-1)*10);
+    game.pits.push({x: w + 80, w: pitW});
+  }
+
+  function jumpOrWeb(){
+    if(!game.running || game.asking) return;
+    if(player.onGround){
+      player.vy = -600;
+      player.onGround = false;
+      SFX.jump();
+    } else {
+      player.webActive = true;
+      player.webT = 0;
+      player.vy = Math.min(player.vy, 40);
+      player.vy -= 300;
+      SFX.web();
+    }
+  }
+
+  canvas.addEventListener("pointerdown", (e)=>{ e.preventDefault(); SFX.unlock(); jumpOrWeb(); }, {passive:false});
+  window.addEventListener("keydown", (e)=>{
+    if(e.code === "Space"){ e.preventDefault(); SFX.unlock(); jumpOrWeb(); }
+  });
+
+  btnHelp.addEventListener("click", ()=>{
+    msg("شرح سريع",
+      "اقفز فوق الأعداء لتحطمهم.\n"+
+      "عند أول اصطدام: فرصة (شفافية).\n"+
+      "عند الاصطدام مرة أخرى: سؤال جمع/طرح (٠-١٠) لمدة ٣٠ ثانية.\n"+
+      "الحفر: لازم تقفز فوقها.\n"+
+      "المراحل تزداد صعوبة والسماء تتغير."
+    );
+  });
+
+  btnCloseMsg.addEventListener("click", ()=>hide(ovMsg));
+  btnAgain.addEventListener("click", ()=>{
+    hide(ovMsg);
+    resetAll();
+    game.running = true;
+  });
+
+  btnStart.addEventListener("click", ()=>{
+    try{
+      SFX.unlock();
+      startErr.style.display = "none";
+      const nm = (nameInput.value || "").trim();
+      game.name = nm ? nm : "لاعب";
+      updateHUD();
+      hideAll();
+      resetAll();
+      game.running = true;
+    } catch(e){
+      showStartError(e);
+    }
+  });
+
+  function aabb(ax,ay,aw,ah, bx,by,bw,bh){
+    return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by;
+  }
+
+  function killEnemy(e){
+    e.alive = false;
+    game.score += 5;
+    SFX.smash();
+    game.camT = 0.18;
+    if(game.score > 0 && game.score % 35 === 0){
+      game.level += 1;
+      SFX.levelup();
+      game.camT = 0.22;
+    }
+    updateHUD();
+  }
+
+  function handleCollisions(){
+    if(game.asking) return;
+    if(game.invulnT > 0) return;
+
+    for(const e of game.enemies){
+      if(!e.alive) continue;
+      if(!aabb(player.x,player.y,player.w,player.h, e.x,e.y,e.w,e.h)) continue;
+
+      const fromAbove = (player.vy > 0) && (player.y + player.h - player.vy*0.016) <= (e.y + 12);
+      if(fromAbove){
+        killEnemy(e);
+        player.vy = -360;
+        player.onGround = false;
+        continue;
+      }
+
+      if(game.hits === 0){
+        game.hits = 1;
+        SFX.hit();
+        game.invulnT = 0.9;
+        updateHUD();
+      } else {
+        startQuestion();
+      }
+      break;
+    }
+  }
+
+  let qState = null;
+  let qInt = null;
+
+  function makeQuestion(){
+    const op = Math.random() < 0.5 ? "+" : "-";
+    let a = Math.floor(Math.random()*11);
+    let b = Math.floor(Math.random()*11);
+    if(op === "-"){
+      if(b > a){ const t=a; a=b; b=t; }
+    }
+    if(op === "+" && a+b > 10){
+      a = Math.floor(Math.random()*11);
+      b = Math.floor(Math.random()*(11-a));
+    }
+    const correct = op === "+" ? (a+b) : (a-b);
+    const options = new Set([correct]);
+    while(options.size < 4){
+      const delta = Math.floor(Math.random()*7) - 3;
+      const v = clamp(correct + delta, 0, 10);
+      options.add(v);
+    }
+    const arr = Array.from(options);
+    for(let i=arr.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]] = [arr[j],arr[i]];
+    }
+    return {a,b,op,correct, options:arr};
+  }
+
+  function renderVisual(q){
+    const makeTokens = (count, crossFromEnd=0) => {
+      const wrap = document.createElement("div");
+      wrap.className = "visualRow";
+      for(let i=0;i<count;i++){
+        const t = document.createElement("div");
+        t.className = "token";
+        if(crossFromEnd>0 && i >= count - crossFromEnd){
+          t.className += " cross dim";
+        }
+        wrap.appendChild(t);
+      }
+      return wrap;
+    };
+
+    qVisual.innerHTML = "";
+    if(q.op === "+"){
+      const r1 = document.createElement("div");
+      r1.className="visualRow";
+      const l1 = document.createElement("div");
+      l1.className="vLabel";
+      l1.textContent = `العدد ${toArabicDigits(q.a)}:`;
+      r1.appendChild(l1);
+      r1.appendChild(makeTokens(q.a));
+      qVisual.appendChild(r1);
+
+      const r2 = document.createElement("div");
+      r2.className="visualRow";
+      r2.style.marginTop="10px";
+      const l2 = document.createElement("div");
+      l2.className="vLabel";
+      l2.textContent = `+ ${toArabicDigits(q.b)}:`;
+      r2.appendChild(l2);
+      r2.appendChild(makeTokens(q.b));
+      qVisual.appendChild(r2);
+
+      const hint = document.createElement("div");
+      hint.className="visualHint";
+      hint.textContent="اجمع النقاط في السطرين للحصول على الناتج.";
+      qVisual.appendChild(hint);
+    } else {
+      const r1 = document.createElement("div");
+      r1.className="visualRow";
+      const l1 = document.createElement("div");
+      l1.className="vLabel";
+      l1.textContent = `العدد ${toArabicDigits(q.a)}:`;
+      r1.appendChild(l1);
+      r1.appendChild(makeTokens(q.a, q.b));
+      qVisual.appendChild(r1);
+
+      const hint = document.createElement("div");
+      hint.className="visualHint";
+      hint.textContent = `اشطب ${toArabicDigits(q.b)} من نقاط ${toArabicDigits(q.a)} لتعرف الناتج.`;
+      qVisual.appendChild(hint);
+    }
+  }
+
+  function startQuestion(){
+    game.asking = true;
+    game.running = false;
+    game.enemies = [];
+    game.pits = [];
+
+    qState = makeQuestion();
+    renderVisual(qState);
+
+    const opWord = qState.op === "+" ? "جمع" : "طرح";
+    qText.textContent = opWord + ":  " + toArabicDigits(qState.a) + " " + qState.op + " " + toArabicDigits(qState.b) + " = ؟";
+
+    qChoices.innerHTML = "";
+    qState.options.forEach(v=>{
+      const b = document.createElement("div");
+      b.className="choice";
+      b.textContent = toArabicDigits(v);
+      b.addEventListener("click", ()=>submitAnswer(v), {once:true});
+      qChoices.appendChild(b);
+    });
+
+    let t = 30;
+    qTimerEl.textContent = toArabicDigits(t);
+    qNote.textContent = "اختر الإجابة خلال ٣٠ ثانية.";
+    show(ovQ);
+
+    clearInterval(qInt);
+    qInt = setInterval(()=>{
+      t -= 1;
+      qTimerEl.textContent = toArabicDigits(Math.max(0,t));
+      if(t <= 0){
+        clearInterval(qInt);
+        SFX.wrong();
+        hide(ovQ);
+        game.asking = false;
+        msg("انتهى الوقت", "لم يتم اختيار إجابة خلال ٣٠ ثانية. تبدأ من جديد.");
+      }
+    }, 1000);
+  }
+
+  function submitAnswer(v){
+    clearInterval(qInt);
+    if(!qState) return;
+
+    if(v === qState.correct){
+      SFX.correct();
+      hide(ovQ);
+      game.asking = false;
+
+      safePlacePlayer();
+      game.invulnT = 1.1;
+      game.hits = 0;
+      updateHUD();
+      game.running = true;
+    } else {
+      SFX.wrong();
+      hide(ovQ);
+      game.asking = false;
+      msg("إجابة خاطئة", "الإجابة غير صحيحة. تبدأ من جديد.");
+    }
+  }
+
+  function skyTheme(){
+    const mod = (game.level-1) % 4;
+    if(mod === 0) return {top:"#ffd2a6", mid:"#87baff", bot:"#1b2a48", stars:false, moon:false};
+    if(mod === 1) return {top:"#9fe3ff", mid:"#3bb4ff", bot:"#1b4a7a", stars:false, moon:false};
+    if(mod === 2) return {top:"#ffb07a", mid:"#ff5b7a", bot:"#1b1a3a", stars:false, moon:false};
+    return {top:"#14355f", mid:"#0c1b33", bot:"#070b14", stars:true, moon:true};
+  }
+
+  function drawBackground(){
+    const w = canvas.width / SCALE_X;
+    const h = canvas.height / SCALE_Y;
+    const th = skyTheme();
+    const grad = ctx.createLinearGradient(0,0,0,h);
+    grad.addColorStop(0, th.top);
+    grad.addColorStop(0.55, th.mid);
+    grad.addColorStop(1, th.bot);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0,w,h);
+
+    if(th.moon){
+      ctx.save();
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = "#e9eef7";
+      ctx.beginPath(); ctx.arc(w*0.82, h*0.16, 24, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = th.bot;
+      ctx.beginPath(); ctx.arc(w*0.84, h*0.15, 22, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+    if(th.stars){
+      ctx.save();
+      ctx.fillStyle = "rgba(255,255,255,.9)";
+      let r = game.skySeed;
+      for(let i=0;i<85;i++){
+        r = (r*9301 + 49297) % 233280;
+        const x = (r/233280) * w;
+        r = (r*9301 + 49297) % 233280;
+        const y = (r/233280) * (h*0.40);
+        ctx.fillRect(x,y,(i%11===0)?2:1,(i%11===0)?2:1);
+      }
+      ctx.restore();
+    }
+
+    const layers = [
+      {y:h*0.50, base:"rgba(60,60,68,.55)", shade:"rgba(30,30,34,.60)", win:"rgba(255,220,160,.25)", step:160, minH:120, maxH:240},
+      {y:h*0.60, base:"rgba(132,112,86,.55)", shade:"rgba(92,74,52,.58)", win:"rgba(255,225,170,.30)", step:125, minH:150, maxH:290},
+      {y:h*0.71, base:"rgba(185,154,115,.62)", shade:"rgba(145,114,79,.62)", win:"rgba(255,235,190,.34)", step:98,  minH:170, maxH:340},
+    ];
+
+    layers.forEach((L, li)=>{
+      let x = -120;
+      let seed = (game.skySeed+17) * (li+7);
+      while(x < w+180){
+        seed = (seed*1103515245 + 12345) >>> 0;
+        const bw = L.step + (seed%100);
+        seed = (seed*1103515245 + 12345) >>> 0;
+        const bh = L.minH + (seed%(L.maxH-L.minH));
+        const y = L.y - bh;
+
+        seed = (seed*1103515245 + 12345) >>> 0;
+        const shape = seed % 12;
+
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.25)";
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetY = 6;
+
+        ctx.fillStyle = L.base;
+        if(shape < 8){
+          ctx.fillRect(x,y,bw,bh);
+          ctx.fillStyle = L.shade; ctx.fillRect(x+bw*0.78,y,bw*0.22,bh);
+          ctx.fillStyle = L.shade;
+          const teeth = Math.max(5, Math.floor(bw/20));
+          for(let t=0;t<teeth;t++){
+            ctx.fillRect(x + t*(bw/teeth), y-8, 10, 8);
+          }
+        } else if(shape < 11){
+          const tw=bw*0.78;
+          ctx.fillRect(x,y,tw,bh);
+          ctx.fillStyle=L.shade; ctx.fillRect(x+tw*0.75,y,tw*0.25,bh);
+          ctx.fillStyle=L.shade;
+          ctx.fillRect(x+10,y+30,tw-20,7);
+          ctx.fillRect(x+10,y+60,tw-26,7);
+        } else {
+          const mw=Math.max(30, Math.floor(bw*0.34));
+          const mx=x+Math.floor(bw*0.36);
+          ctx.fillRect(mx,y+18,mw,bh-18);
+          ctx.fillStyle=L.shade; ctx.fillRect(mx,y+10,mw,10);
+          ctx.fillStyle=L.base;
+          ctx.beginPath(); ctx.arc(mx+mw/2, y+10, 12, Math.PI, 0); ctx.fill();
+        }
+        ctx.restore();
+
+        ctx.save();
+        ctx.fillStyle=L.win;
+        const cols=Math.max(2, Math.floor(bw/38));
+        const rows=Math.max(2, Math.floor(bh/52));
+        for(let rr=0; rr<rows; rr++){
+          for(let cc=0; cc<cols; cc++){
+            seed = (seed*1103515245 + 12345) >>> 0;
+            if((seed%4)===0) continue;
+            const wx = x + 14 + cc*(bw-28)/cols;
+            const wy = y + 22 + rr*(bh-40)/rows;
+            if((seed%6)===0){
+              ctx.beginPath();
+              ctx.arc(wx+6, wy+7, 7, Math.PI, 0);
+              ctx.fill();
+              ctx.fillRect(wx-1, wy+7, 14, 12);
+            } else {
+              ctx.fillRect(wx, wy, 10, 14);
+            }
+          }
+        }
+        ctx.restore();
+
+        x += bw - 26;
+      }
+    });
+
+    const gy = groundBaseline();
+    ctx.save();
+    for(let i=0;i<4;i++){
+      const px = w*(0.14 + i*0.23);
+      const ph = 86 + i*12;
+      ctx.fillStyle="rgba(20,40,24,.65)";
+      ctx.fillRect(px-5, gy-ph, 10, ph);
+      ctx.fillStyle="rgba(30,70,36,.55)";
+      for(let k=0;k<6;k++){
+        ctx.beginPath();
+        ctx.ellipse(px, gy-ph, 28, 10, (k-2.5)*0.35, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+
+    ctx.fillStyle="rgba(0,0,0,.25)";
+    ctx.fillRect(0,gy,w,h-gy);
+    ctx.strokeStyle="rgba(255,255,255,.14)";
+    ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(w,gy); ctx.stroke();
+
+    for(const p of game.pits){
+      ctx.fillStyle = "rgba(0,0,0,.72)";
+      ctx.fillRect(p.x, gy, p.w, h-gy);
+      ctx.fillStyle = "rgba(255,255,255,.10)";
+      ctx.fillRect(p.x-4, gy-6, 6, 12);
+      ctx.fillRect(p.x+p.w-2, gy-6, 6, 12);
+    }
+  }
+
+  function roundRect(x,y,w,h,r,fill){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    if(fill) ctx.fill(); else ctx.stroke();
+  }
+
+  function drawSpiderman(){
+    const x=player.x, y=player.y;
+    ctx.save();
+    ctx.globalAlpha = (game.hits===1 && game.invulnT>0) ? 0.55 : 1;
+
+    ctx.fillStyle="#ff3b30";
+    ctx.beginPath(); ctx.ellipse(x+26,y+18,18,16,0,0,Math.PI*2); ctx.fill();
+
+    ctx.save();
+    ctx.globalAlpha *= 0.22;
+    ctx.strokeStyle="rgba(0,0,0,.85)";
+    ctx.lineWidth=1.2;
+    for(let k=-12;k<=12;k+=6){
+      ctx.beginPath();
+      ctx.arc(x+26,y+18,18,(k/18),Math.PI-(k/18));
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    ctx.fillStyle="rgba(255,255,255,.96)";
+    ctx.beginPath(); ctx.ellipse(x+18,y+18,7,5,-0.25,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x+34,y+18,7,5, 0.25,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="rgba(0,0,0,.35)";
+    ctx.beginPath(); ctx.ellipse(x+18,y+18,3,2,-0.25,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x+34,y+18,3,2, 0.25,0,Math.PI*2); ctx.fill();
+
+    ctx.fillStyle="#1e3a8a";
+    roundRect(x+10,y+28,32,24,10,true);
+
+    ctx.fillStyle="#ff3b30";
+    roundRect(x+4,y+30,10,18,6,true);
+    roundRect(x+38,y+30,10,18,6,true);
+    roundRect(x+14,y+52,12,14,7,true);
+    roundRect(x+30,y+52,12,14,7,true);
+
+    ctx.save();
+    ctx.globalAlpha *= 0.5;
+    ctx.strokeStyle="rgba(255,255,255,.9)";
+    ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(x+26,y+32); ctx.lineTo(x+26,y+50);
+    ctx.moveTo(x+18,y+40); ctx.lineTo(x+34,y+40);
+    ctx.stroke();
+    ctx.restore();
+
+    if(player.webActive){
+      ctx.save();
+      ctx.strokeStyle="rgba(255,255,255,.85)";
+      ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(x+26,y+22); ctx.lineTo(x+26,y-44); ctx.stroke();
+      ctx.fillStyle="rgba(255,255,255,.85)";
+      ctx.beginPath(); ctx.arc(x+26,y-44,4,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  function drawEnemy(e){
+    ctx.save();
+    if(e.kind==="flyer"){
+      ctx.globalAlpha=0.95;
+      ctx.fillStyle="rgba(255,255,255,.16)";
+      ctx.beginPath(); ctx.ellipse(e.x+e.w/2,e.y+e.h/2,e.w/2,e.h/2,0,0,Math.PI*2); ctx.fill();
+      ctx.save();
+      ctx.globalAlpha=0.55;
+      ctx.strokeStyle="rgba(255,255,255,.75)";
+      ctx.lineWidth=3;
+      ctx.beginPath();
+      ctx.moveTo(e.x+6, e.y+e.h/2);
+      ctx.quadraticCurveTo(e.x+e.w/2, e.y-10, e.x+e.w-6, e.y+e.h/2);
+      ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle="rgba(0,0,0,.35)";
+      ctx.beginPath(); ctx.arc(e.x+e.w*0.62,e.y+e.h*0.52,3,0,Math.PI*2); ctx.fill();
+    } else if(e.kind==="spiky"){
+      ctx.globalAlpha=0.95;
+      ctx.fillStyle="rgba(255,255,255,.14)";
+      roundRect(e.x,e.y,e.w,e.h,14,true);
+      ctx.save();
+      ctx.globalAlpha=0.70;
+      ctx.fillStyle="rgba(255,59,48,.75)";
+      for(let i=0;i<5;i++){
+        const sx=e.x+6+i*7;
+        ctx.beginPath();
+        ctx.moveTo(sx, e.y+6);
+        ctx.lineTo(sx+4, e.y-6);
+        ctx.lineTo(sx+8, e.y+6);
+        ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+      ctx.fillStyle="rgba(0,0,0,.35)";
+      ctx.fillRect(e.x+10, e.y+18, e.w-20, 6);
+    } else {
+      ctx.globalAlpha=0.95;
+      ctx.fillStyle="rgba(255,255,255,.14)";
+      roundRect(e.x,e.y,e.w,e.h,16,true);
+      ctx.fillStyle="rgba(255,255,255,.75)";
+      ctx.beginPath(); ctx.arc(e.x+16,e.y+18,4,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(e.x+e.w-16,e.y+18,4,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="rgba(0,0,0,.35)";
+      ctx.beginPath(); ctx.arc(e.x+16,e.y+18,2,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(e.x+e.w-16,e.y+18,2,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  let last = performance.now();
+  function tick(now){
+    const dt = Math.min(0.033, (now-last)/1000);
+    last = now;
+
+    if(game.camT > 0){
+      game.camT = Math.max(0, game.camT - dt);
+      const s = game.camT / 0.22;
+      game.camX = (Math.random()*2-1) * 6 * s;
+      game.camY = (Math.random()*2-1) * 4 * s;
+    } else { game.camX=0; game.camY=0; }
+
+    if(game.invulnT > 0) game.invulnT = Math.max(0, game.invulnT - dt);
+
+    if(game.running && !game.asking){
+      const d = difficulty();
+
+      game.spawnT += dt;
+      if(game.spawnT >= d.enemyEvery){ game.spawnT = 0; spawnEnemy(); }
+
+      game.pitT += dt;
+      if(game.pitT >= d.pitEvery){ game.pitT = 0; spawnPit(); }
+
+      for(const e of game.enemies){ e.x += e.vx * dt; }
+      game.enemies = game.enemies.filter(e => e.alive && e.x + e.w > -120);
+
+      for(const p of game.pits){ p.x -= d.speed * dt; }
+      game.pits = game.pits.filter(p => p.x + p.w > -160);
+
+      const g = 1300;
+      player.vy += g * dt;
+      player.y += player.vy * dt;
+
+      const px = player.x + player.w/2;
+      const gy = groundYAt(px);
+
+      if(player.y + player.h >= gy){
+        player.y = gy - player.h;
+        player.vy = 0;
+        player.onGround = true;
+      } else {
+        player.onGround = false;
+      }
+
+      if(player.webActive){
+        player.webT += dt;
+        if(player.webT >= 0.22){ player.webActive = false; player.webT = 0; }
+      }
+
+      const hLimit = canvas.height / SCALE_Y + 140;
+      if(player.y > hLimit){
+        SFX.wrong();
+        game.running = false;
+        msg("سقطت في حفرة!", "حاول مرة أخرى من البداية.");
+      }
+
+      handleCollisions();
+    }
+
+    ctx.setTransform(SCALE_X,0,0,SCALE_Y,0,0);
+    ctx.translate(game.camX, game.camY);
+    const w = canvas.width / SCALE_X;
+    const h = canvas.height / SCALE_Y;
+    ctx.clearRect(0,0,w,h);
+    drawBackground();
+
+    for(const e of game.enemies) drawEnemy(e);
+    drawSpiderman();
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+})();
+</script>
+</body>
+</html>
